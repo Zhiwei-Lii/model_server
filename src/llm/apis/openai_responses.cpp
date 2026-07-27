@@ -1064,8 +1064,15 @@ std::string OpenAIResponsesHandler::serializeUnaryResponse(
     for (const auto& deltas : allDeltas) {
         parsedOutputs.push_back(parsedOutputFromDeltas(deltas));
     }
-    const ov::genai::GenerationFinishReason finishReason =
-        finishReasons.empty() ? ov::genai::GenerationFinishReason::STOP : finishReasons[0];
+    const ov::genai::GenerationFinishReason finishReason = [&]() {
+        // Promote LENGTH if any sequence was truncated, to avoid hiding truncation.
+        for (const auto& fr : finishReasons) {
+            if (fr == ov::genai::GenerationFinishReason::LENGTH) {
+                return fr;
+            }
+        }
+        return finishReasons.empty() ? ov::genai::GenerationFinishReason::STOP : finishReasons[0];
+    }();
     return serializeUnaryResponseImpl(parsedOutputs, finishReason);
 }
 

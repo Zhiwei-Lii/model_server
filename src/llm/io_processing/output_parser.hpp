@@ -58,7 +58,7 @@ private:
     ov::genai::Tokenizer tokenizer;
     std::string toolParserName;
     std::string reasoningParserName;
-    ToolsSchemas_t toolNameSchemaMap;
+    const ToolsSchemas_t& toolNameSchemaMap;  // reference to OpenAIApiHandler::request.toolNameSchemaMap; always sees populated map
     std::unique_ptr<BaseOutputParser> toolParser = nullptr;       // Tool parser for extracting tool calls
     std::unique_ptr<BaseOutputParser> reasoningParser = nullptr;  // Reasoning parser for extracting reasoning content
 
