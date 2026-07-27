@@ -125,7 +125,6 @@ std::optional<rapidjson::Document> OutputParser::parseContentChunk(ProcessingPha
             }
         }
     }
-
     if (chunkContent.empty() || chunkContent == "") {
         streamOutputCache.clear();
         processingPhase = newPhase;
@@ -181,7 +180,10 @@ std::optional<rapidjson::Document> OutputParser::parseReasoningChunk(const std::
 }
 
 OutputParser::OutputParser(ov::genai::Tokenizer& tokenizer, const std::string toolParserName, const std::string reasoningParserName, const ToolsSchemas_t& toolNameSchemaMap) :
-    tokenizer(tokenizer), toolParserName(toolParserName), reasoningParserName(reasoningParserName), toolNameSchemaMap(toolNameSchemaMap) {
+    tokenizer(tokenizer),
+    toolParserName(toolParserName),
+    reasoningParserName(reasoningParserName),
+    toolNameSchemaMap(toolNameSchemaMap) {
     if (toolParserName == "llama3") {
         toolParser = std::make_unique<Llama3ToolParser>(tokenizer);
     } else if (toolParserName == "hermes3") {
@@ -230,7 +232,6 @@ OutputParser::OutputParser(ov::genai::Tokenizer& tokenizer, const std::string to
         throw std::runtime_error("Unsupported reasoning parser: \"" + reasoningParserName +
                                  "\". Supported reasoning parsers are: " + getSupportedReasoningParserNamesAsString());
     }
-
 }
 
 bool OutputParser::isToolParserAvailable() const {
@@ -272,6 +273,8 @@ void OutputParser::resetStreamingState() {
         toolParser = std::make_unique<DevstralToolParser>(tokenizer, toolNameSchemaMap);
     } else if (toolParserName == "lfm2") {
         toolParser = std::make_unique<Lfm2ToolParser>(tokenizer);
+    } else if (toolParserName == "minicpm5") {
+        toolParser = std::make_unique<Minicpm5ToolParser>(tokenizer, toolNameSchemaMap);
     } else if (toolParserName == "gemma4") {
         toolParser = std::make_unique<Gemma4ToolParser>(tokenizer);
     }
@@ -282,6 +285,10 @@ void OutputParser::resetStreamingState() {
         reasoningParser = std::make_unique<Gemma4ReasoningParser>(tokenizer);
     } else if (reasoningParserName == "gptoss") {
         reasoningParser = std::make_unique<GptOssReasoningParser>(tokenizer);
+    } else if (reasoningParserName == "minicpm5") {
+        reasoningParser = std::make_unique<Minicpm5ReasoningParser>(tokenizer);
+    } else if (reasoningParserName == "lfm2") {
+        reasoningParser = std::make_unique<Lfm25ReasoningParser>(tokenizer);
     }
 
     if (implicitReasoningStart_) {

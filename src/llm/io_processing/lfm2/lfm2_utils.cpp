@@ -216,7 +216,17 @@ bool parseInToolCallState(const std::string& streamingContent, ToolCall& toolCal
     size_t argsPos = streamingContent.find(TOOL_ARGS_START_INDICATOR, streamingPosition);
 
     if (toolListStartPos != std::string::npos) {
+        // '[' found at or after current position — advance past it.
         streamingPosition = toolListStartPos + TOOL_LIST_START_INDICATOR.length();
+    } else if (argsPos != std::string::npos) {
+        // '[' not visible from current position but '(' is.
+        // Valid only when '[' appeared in an earlier chunk (streamingPosition already advanced past it).
+        // Reject when '[' is completely absent or appears after '(' — malformed input.
+        size_t bracketAnyPos = streamingContent.find(TOOL_LIST_START_INDICATOR);
+        if (bracketAnyPos == std::string::npos || bracketAnyPos >= argsPos) {
+            return false;
+        }
+        // '[' was consumed in a prior call; streamingPosition is already correct.
     }
 
     if (argsPos == std::string::npos) {

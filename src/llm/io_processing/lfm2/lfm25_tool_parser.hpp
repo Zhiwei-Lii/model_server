@@ -15,6 +15,7 @@
 //*****************************************************************************
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "lfm2_utils.hpp"
 
@@ -30,33 +31,23 @@ public:
     static const int64_t reasoningEndTokenId;
 
     Lfm25ToolParser() = delete;
-    explicit Lfm25ToolParser(ov::genai::Tokenizer& tokenizer) :
-        BaseOutputParser(tokenizer) {}
 
-    void parse(ParsedOutput& parsedOutput, const std::vector<int64_t>& generatedTokens) override;
+    static ParsingConfig defaultParsingConfig() {
+        ParsingConfig cfg;
+        cfg.startTags = {TOOL_CALL_START_TAG};
+        cfg.specialTokenStartTags = {TOOL_CALL_START_TAG};
+        cfg.endTag = TOOL_CALL_END_TAG;
+        cfg.contentTagsToErase = {EOS_TOKEN_STR};
+        cfg.toolCallPhaseNeedsSpecialTokens = true;
+        return cfg;
+    }
+
+    explicit Lfm25ToolParser(ov::genai::Tokenizer& tokenizer,
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        BaseOutputParser(tokenizer,
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
-    const std::vector<std::string>& getParsingStartTags() const override {
-        static const std::vector<std::string> parsingStartTags = {TOOL_CALL_START_TAG};
-        return parsingStartTags;
-    }
-
-    const std::vector<std::string>& getSpecialParsingStartTags() const override {
-        static const std::vector<std::string> beginningOnlyTags = {};
-        return beginningOnlyTags;
-    }
-
-    const std::vector<std::string>& getSpecialTagsToErase() const override {
-        static const std::vector<std::string> tagsToErase = {EOS_TOKEN_STR};
-        return tagsToErase;
-    }
-
-    const std::string& getParsingEndTag() const override {
-        return TOOL_CALL_END_TAG;
-    }
-
-    bool requiresStreamingWithSpecialTokens() const override {
-        return true;
-    }
 
 private:
     std::string streamingContent;

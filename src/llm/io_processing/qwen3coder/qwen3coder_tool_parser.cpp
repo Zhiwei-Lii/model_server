@@ -224,9 +224,10 @@ void Qwen3CoderToolParser::lazyFillInitToolParametersTypesMap() {
 }
 
 Qwen3CoderToolParser::Qwen3CoderToolParser(ov::genai::Tokenizer& tokenizer, const ToolsSchemas_t& toolSchemas,
-                                             std::optional<ParsingConfig> configOverride) :
+    std::optional<ParsingConfig> configOverride) :
     BaseOutputParser(tokenizer, [&]() {
-        if (configOverride.has_value()) return std::move(*configOverride);
+        if (configOverride.has_value())
+            return std::move(*configOverride);
         ParsingConfig cfg;
         cfg.startTags = {TOOL_START_TAG, FUNCTION_NAME_TAG};
         return cfg;

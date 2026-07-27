@@ -18,6 +18,7 @@
 #include <openvino/genai/tokenizer.hpp>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/port/rapidjson_document.hpp"
@@ -52,16 +53,16 @@ public:
         // used when the text is passed directly, e.g. in streaming tests) and
         // specialTokenStartTags (token-ID-based, used in production where the token
         // decodes to empty with skip_special_tokens=true).
-        cfg.startTags             = {"<|python_tag|>"};
+        cfg.startTags = {"<|python_tag|>"};
         cfg.specialTokenStartTags = {"<|python_tag|>"};
-        cfg.specialStartTags      = {"{"};
+        cfg.specialStartTags = {"{"};
         return cfg;
     }
 
     explicit Llama3ToolParser(ov::genai::Tokenizer& tokenizer,
-                               std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 };

@@ -14,6 +14,7 @@
 // limitations under the License.
 //*****************************************************************************
 #include "lfm2_tool_parser.hpp"
+#include "../utils.hpp"
 
 namespace ovms {
 
@@ -48,7 +49,13 @@ bool Lfm2ToolParser::parseNewContent() {
 }
 
 std::optional<rapidjson::Document> Lfm2ToolParser::parseChunk(const std::string& chunk, const std::vector<int64_t>& /*tokens*/, ov::genai::GenerationFinishReason finishReason) {
-    if (chunk.empty()) {
+    // Empty chunks may arrive from the two-step streamer end() (NONE + empty STOP).
+    // Skip them unless we are in ToolCallParameters with unprocessed content already
+    // buffered (e.g. ')' arrived together with the name in the same flush, but was not
+    // consumed because parseNewContent() exits after the first state transition).
+    const bool hasPendingState = (this->currentState == State::ToolCallParameters) ||
+                                 (this->currentState == State::ToolCallEnded);
+    if (chunk.empty() && !hasPendingState) {
         return std::nullopt;
     }
 
@@ -109,14 +116,14 @@ bool Lfm2ToolParser::parseSingleToolCall(const std::string& toolStr, ToolCall& t
         int argsStrLen = toolStr.length() - argsPos - TOOL_ARGS_START_INDICATOR.length() - TOOL_ARGS_END_INDICATOR.length();
         std::string argsStr = toolStr.substr(argsPos + TOOL_ARGS_START_INDICATOR.length(), argsStrLen);
         SPDLOG_LOGGER_TRACE(llm_calculator_logger, "Parsed args string: {}", argsStr);
-        std::vector<Lfm2ToolParser::Argument> arguments = parseArguments(argsStr);
+        std::vector<Argument> arguments = parseArguments(argsStr);
 
         toolCall.name = toolName;
         rapidjson::Document argsDoc(rapidjson::kObjectType);
         rapidjson::StringBuffer sb;
         rapidjson::Writer<rapidjson::StringBuffer> argsWriter(sb);
         argsWriter.StartObject();
-        for (const Lfm2ToolParser::Argument& argument : arguments) {
+        for (const Argument& argument : arguments) {
             argsWriter.Key(argument.name.c_str());
             writeArgumentToWriter(argument.value, argsWriter);
         }

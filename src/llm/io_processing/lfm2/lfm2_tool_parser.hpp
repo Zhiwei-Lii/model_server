@@ -15,6 +15,7 @@
 //*****************************************************************************
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include "src/llm/io_processing/base_output_parser.hpp"
 #include "../../../logging.hpp"
@@ -34,17 +35,17 @@ public:
 
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
-        cfg.startTags                    = {"<|tool_call_start|>"};
-        cfg.specialTokenStartTags        = {"<|tool_call_start|>"};
-        cfg.endTag                        = "<|tool_call_end|>";
+        cfg.startTags = {"<|tool_call_start|>"};
+        cfg.specialTokenStartTags = {"<|tool_call_start|>"};
+        cfg.endTag = "<|tool_call_end|>";
         cfg.toolCallPhaseNeedsSpecialTokens = true;
         return cfg;
     }
 
     explicit Lfm2ToolParser(ov::genai::Tokenizer& tokenizer,
-                             std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 
@@ -58,5 +59,6 @@ private:
     int toolCallIndex{TOOL_CALL_INDEX_START};
 
     bool parseNewContent();
+    bool parseSingleToolCall(const std::string& toolStr, ToolCall& toolCall);
 };
 }  // namespace ovms

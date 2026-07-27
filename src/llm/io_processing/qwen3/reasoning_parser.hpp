@@ -18,6 +18,7 @@
 #include <openvino/genai/tokenizer.hpp>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "src/port/rapidjson_document.hpp"
@@ -37,14 +38,14 @@ public:
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
         cfg.startTags = {"<think>"};
-        cfg.endTag    = "</think>";
+        cfg.endTag = "</think>";
         return cfg;
     }
 
     explicit Qwen3ReasoningParser(ov::genai::Tokenizer& tokenizer,
-                                   std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 };

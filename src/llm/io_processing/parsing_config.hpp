@@ -55,10 +55,10 @@ struct ParsingConfig {
     std::vector<std::string> startTags;
     std::vector<std::string> specialTokenStartTags;
     std::vector<std::string> specialStartTags;
-    std::string              endTag;
+    std::string endTag;
     std::vector<std::string> contentTagsToErase;
 
-    bool alwaysNeedsSpecialTokens        = false;
+    bool alwaysNeedsSpecialTokens = false;
     bool toolCallPhaseNeedsSpecialTokens = false;
 };
 

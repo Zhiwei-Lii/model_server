@@ -17,6 +17,7 @@
 
 #include <openvino/genai/tokenizer.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/port/rapidjson_document.hpp"
@@ -47,19 +48,19 @@ public:
 
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
-        cfg.startTags                = {"<|channel|>analysis<|message|>"};
-        cfg.specialStartTags         = {"<|channel|>final<|message|>",
-                                        "<|channel|>commentary<|message|>",
-                                        "<|start|>assistant<|channel|>final<|message|>"};
-        cfg.endTag                   = "<|end|>";
+        cfg.startTags = {"<|channel|>analysis<|message|>"};
+        cfg.specialStartTags = {"<|channel|>final<|message|>",
+            "<|channel|>commentary<|message|>",
+            "<|start|>assistant<|channel|>final<|message|>"};
+        cfg.endTag = "<|end|>";
         cfg.alwaysNeedsSpecialTokens = true;
         return cfg;
     }
 
     explicit GptOssReasoningParser(ov::genai::Tokenizer& tokenizer,
-                                    std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 };

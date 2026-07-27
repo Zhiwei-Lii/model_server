@@ -58,12 +58,13 @@ OVMSTextStreamer::OVMSTextStreamer(
             // skip_special_tokens=true means we DON'T want special tokens.
             const bool skipSpecial = it->second.as<bool>();
             m_user_wants_special = !skipSpecial;
-        } catch (...) {}
+        } catch (...) {
+        }
     }
     // Initialise current mode from parser state (UNKNOWN phase at construction).
     m_current_special_mode = m_output_parser
-        ? m_output_parser->needSpecialTokensForCurrentDecode(m_user_wants_special)
-        : m_user_wants_special;
+                                 ? m_output_parser->needSpecialTokensForCurrentDecode(m_user_wants_special)
+                                 : m_user_wants_special;
 }
 
 // -----------------------------------------------------------------------------
@@ -101,7 +102,8 @@ ov::genai::StreamingStatus OVMSTextStreamer::write(int64_t token) {
                 const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
                 if (text.size() > m_printed_len) {
                     const auto status = flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
-                    if (status != ov::genai::StreamingStatus::RUNNING) return status;
+                    if (status != ov::genai::StreamingStatus::RUNNING)
+                        return status;
                 }
             }
             // Reset decode state and switch mode.

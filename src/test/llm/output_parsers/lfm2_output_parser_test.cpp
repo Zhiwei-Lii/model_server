@@ -679,7 +679,7 @@ TEST_F(LFM2OutputParserTest, ParseToolCallWithArgumentMissingValue) {
     std::string input = "<|tool_call_start|>[broken(arg1=)]<|tool_call_end|>";
     auto generatedTensor = lfm2Tokenizer->encode(input, ov::genai::add_special_tokens(false)).input_ids;
     std::vector<int64_t> generatedTokens(generatedTensor.data<int64_t>(), generatedTensor.data<int64_t>() + generatedTensor.get_size());
-    ParsedOutput parsedOutput = outputParserWithRegularToolParsing->parse(generatedTokens, true);
+    ParsedOutput parsedOutput = ovms::test::parseWithStreamer(*lfm2Tokenizer, *outputParserWithRegularToolParsing, generatedTokens, true, true);
     // The tool call is parsed but the argument value will be empty and invalid
     ASSERT_EQ(parsedOutput.toolCalls.size(), 1);
     EXPECT_EQ(parsedOutput.toolCalls[0].name, "broken");
@@ -689,7 +689,7 @@ TEST_F(LFM2OutputParserTest, ParseToolCallWithMissingSquareBracket) {
     std::string input = "<|tool_call_start|>broken(arg1=1)<|tool_call_end|>";
     auto generatedTensor = lfm2Tokenizer->encode(input, ov::genai::add_special_tokens(false)).input_ids;
     std::vector<int64_t> generatedTokens(generatedTensor.data<int64_t>(), generatedTensor.data<int64_t>() + generatedTensor.get_size());
-    ParsedOutput parsedOutput = outputParserWithRegularToolParsing->parse(generatedTokens, true);
+    ParsedOutput parsedOutput = ovms::test::parseWithStreamer(*lfm2Tokenizer, *outputParserWithRegularToolParsing, generatedTokens, true, true);
     ASSERT_EQ(parsedOutput.toolCalls.size(), 0);
 }
 

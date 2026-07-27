@@ -50,7 +50,13 @@ bool Lfm25ToolParser::parseNewContent() {
 }
 
 std::optional<rapidjson::Document> Lfm25ToolParser::parseChunk(const std::string& chunk, const std::vector<int64_t>& /*tokens*/, ov::genai::GenerationFinishReason finishReason) {
-    if (chunk.empty()) {
+    // Empty chunks may arrive from the two-step streamer end() (NONE + empty STOP).
+    // Skip them unless we are in ToolCallParameters with unprocessed content already
+    // buffered (e.g. ')' arrived together with the name in the same flush, but was not
+    // consumed because parseNewContent() exits after the first state transition).
+    const bool hasPendingState = (this->currentState == State::ToolCallParameters) ||
+                                 (this->currentState == State::ToolCallEnded);
+    if (chunk.empty() && !hasPendingState) {
         return std::nullopt;
     }
 
@@ -102,7 +108,4 @@ std::optional<rapidjson::Document> Lfm25ToolParser::parseChunk(const std::string
     return std::nullopt;
 }
 
-void Lfm25ToolParser::parse(ParsedOutput& parsedOutput, const std::vector<int64_t>& generatedTokens) {
-    parseUnaryResponse(parsedOutput, generatedTokens, tokenizer, this->tagIds);
-}
 }  // namespace ovms

@@ -51,18 +51,18 @@ public:
 
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
-        cfg.startTags                    = {"<|tool_call>"};
-        cfg.specialTokenStartTags        = {"<|tool_call>"};
-        cfg.endTag                       = "<tool_call|>";
-        cfg.contentTagsToErase           = {"<turn|>", "<|tool_response>"};
+        cfg.startTags = {"<|tool_call>"};
+        cfg.specialTokenStartTags = {"<|tool_call>"};
+        cfg.endTag = "<tool_call|>";
+        cfg.contentTagsToErase = {"<turn|>", "<|tool_response>"};
         cfg.toolCallPhaseNeedsSpecialTokens = true;
         return cfg;
     }
 
     explicit Gemma4ToolParser(ov::genai::Tokenizer& tokenizer,
-                               std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 

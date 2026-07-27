@@ -88,7 +88,8 @@ protected:
     // Called once from constructors that set parsingConfig.specialTokenStartTags.
     void resolveSpecialTokenIds() {
         for (const auto& tag : parsingConfig.specialTokenStartTags) {
-            if (tag.empty()) continue;
+            if (tag.empty())
+                continue;
             const auto tensor = tokenizer.encode(tag, ov::genai::add_special_tokens(false)).input_ids;
             if (tensor.get_size() == 1) {
                 resolvedStartTokenToTag[tensor.data<int64_t>()[0]] = tag;
@@ -102,7 +103,8 @@ public:
         tokenizer(tokenizer) {}
 
     explicit BaseOutputParser(ov::genai::Tokenizer& tokenizer, ParsingConfig config) :
-        tokenizer(tokenizer), parsingConfig(std::move(config)) {
+        tokenizer(tokenizer),
+        parsingConfig(std::move(config)) {
         resolveSpecialTokenIds();
     }
 

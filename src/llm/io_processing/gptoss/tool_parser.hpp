@@ -18,6 +18,7 @@
 #include <openvino/genai/tokenizer.hpp>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/port/rapidjson_document.hpp"
@@ -52,18 +53,18 @@ public:
 
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
-        cfg.startTags            = {"<|channel|>commentary to=",
-                                    "<|channel|>analysis to="};
-        cfg.endTag               = "<|call|>";
-        cfg.alwaysNeedsSpecialTokens     = true;
+        cfg.startTags = {"<|channel|>commentary to=",
+            "<|channel|>analysis to="};
+        cfg.endTag = "<|call|>";
+        cfg.alwaysNeedsSpecialTokens = true;
         cfg.toolCallPhaseNeedsSpecialTokens = true;
         return cfg;
     }
 
     explicit GptOssToolParser(ov::genai::Tokenizer& tokenizer,
-                               std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<ParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
-                         configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
+            configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
     // Unary
     // Streaming

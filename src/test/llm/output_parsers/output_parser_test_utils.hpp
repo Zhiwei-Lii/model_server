@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <openvino/genai/tokenizer.hpp>
@@ -71,11 +72,14 @@ inline ParsedOutput parseWithStreamer(
             result.reasoning.append(d["reasoning_content"].GetString());
         if (d.HasMember("tool_calls") && d["tool_calls"].IsArray()) {
             for (const auto& entry : d["tool_calls"].GetArray()) {
-                if (!entry.IsObject() || !entry.HasMember("index")) continue;
+                if (!entry.IsObject() || !entry.HasMember("index"))
+                    continue;
                 const int idx = entry["index"].GetInt();
-                if (idx < 0) continue;
+                if (idx < 0)
+                    continue;
                 const auto uidx = static_cast<size_t>(idx);
-                if (uidx >= toolCalls.size()) toolCalls.resize(uidx + 1);
+                if (uidx >= toolCalls.size())
+                    toolCalls.resize(uidx + 1);
                 auto& tc = toolCalls[uidx];
                 if (entry.HasMember("id") && entry["id"].IsString())
                     tc.id = entry["id"].GetString();
@@ -97,7 +101,7 @@ inline ParsedOutput parseWithStreamer(
 
     const ov::AnyMap decodeParams{{ov::genai::skip_special_tokens.name(), !userWantsSpecialTokens}};
     OVMSTextStreamer streamer(tokenizer, parserPtr, toolsAvailable,
-                              std::move(callback), decodeParams);
+        std::move(callback), decodeParams);
 
     for (int64_t token : generatedTokens)
         streamer.write(token);
