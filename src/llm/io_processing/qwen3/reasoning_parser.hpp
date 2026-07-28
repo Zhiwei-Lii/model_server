@@ -32,6 +32,13 @@ protected:
     const std::string parsingStartTag = "<think>";
     const std::string parsingEndTag = "</think>";
 
+private:
+    // Tracks whether the phase-entry start tag has already been consumed by parseChunk.
+    // On the very first call the start tag is stripped (explicit start) or skipped
+    // (implicit start — tag was already in the prompt). After that, any <think> in
+    // the stream is treated as literal reasoning content and emitted as-is.
+    bool phaseEntryTagConsumed_ = false;
+
 public:
     Qwen3ReasoningParser() = delete;
 

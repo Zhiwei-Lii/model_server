@@ -32,7 +32,6 @@
 #include "gemma4/gemma4_reasoning_parser.hpp"
 #include "gptoss/reasoning_parser.hpp"
 #include "lfm2/lfm2_tool_parser.hpp"
-#include "lfm2/lfm25_tool_parser.hpp"
 #include "lfm2/lfm25_reasoning_parser.hpp"
 #include "gemma4/gemma4_tool_parser.hpp"
 #include "minicpm5/minicpm5_tool_parser.hpp"
@@ -199,16 +198,7 @@ OutputParser::OutputParser(ov::genai::Tokenizer& tokenizer, const std::string to
     } else if (toolParserName == "devstral") {
         toolParser = std::make_unique<DevstralToolParser>(tokenizer, toolNameSchemaMap);
     } else if (toolParserName == "lfm2") {
-        auto vocab = tokenizer.get_vocab();
-        auto token = vocab.find(Lfm25ToolParser::TOOL_CALL_START_TAG);
-        auto tokenId = token != vocab.end() ? token->second : -1;
-        if (tokenId == Lfm25ToolParser::toolCallStartTokenId) {
-            SPDLOG_LOGGER_DEBUG(llm_calculator_logger, "Using Lfm25ToolParser for tool parsing");
-            toolParser = std::make_unique<Lfm25ToolParser>(tokenizer);
-        } else {
-            SPDLOG_LOGGER_DEBUG(llm_calculator_logger, "Using Lfm2ToolParser for tool parsing");
-            toolParser = std::make_unique<Lfm2ToolParser>(tokenizer);
-        }
+        toolParser = std::make_unique<Lfm2ToolParser>(tokenizer);
     } else if (toolParserName == "gemma4") {
         toolParser = std::make_unique<Gemma4ToolParser>(tokenizer);
     } else if (toolParserName == "minicpm5") {
@@ -309,6 +299,22 @@ bool OutputParser::needSpecialTokensForCurrentDecode(bool userWantsSpecialTokens
     if ((processingPhase == TOOL_CALLS_PROCESSING_TOOL || processingPhase == TOOL_CALLS_WAITING_FOR_TOOL) &&
         toolParser && toolParser->getParsingConfig().toolCallPhaseNeedsSpecialTokens) {
         return true;
+    }
+    return false;
+}
+
+bool OutputParser::isPhaseStartToken(int64_t tokenId) const {
+    if (toolParser) {
+        const auto& tokenMap = toolParser->getResolvedStartTokenToTag();
+        if (tokenMap.count(tokenId)) {
+            return true;
+        }
+    }
+    if (reasoningParser) {
+        const auto& tokenMap = reasoningParser->getResolvedStartTokenToTag();
+        if (tokenMap.count(tokenId)) {
+            return true;
+        }
     }
     return false;
 }

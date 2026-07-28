@@ -14,30 +14,45 @@
 // limitations under the License.
 //*****************************************************************************
 #pragma once
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <openvino/genai/tokenizer.hpp>
+
 #include "src/llm/io_processing/base_output_parser.hpp"
-#include "../../../logging.hpp"
-#include "./lfm2_utils.hpp"
 
 namespace ovms {
+
+// Streaming state machine states for LFM2 / LFM2.5 tool-call parsing.
+enum class Lfm2ParseState {
+    Content,
+    ToolCallStarted,
+    ToolCallParameters,
+    ToolCallEnded,
+    AfterToolCall
+};
+
+// Unified tool parser for both LFM2 and LFM2.5.
+// The two model families share identical tool-call grammar; the only differences
+// are the token IDs assigned by their respective tokenizers and whether the
+// chat template appends <|im_end|> after tool calls (LFM2.5 only).
+// The correct ParsingConfig variant is chosen automatically via configForTokenizer().
 class Lfm2ToolParser : public BaseOutputParser {
-protected:
-    static const std::string TOOL_CALL_START_TAG;
-    static const std::string TOOL_CALL_END_TAG;
-
-    static const int64_t toolCallStartTokenId;
-    static const int64_t toolCallEndTokenId;
-
 public:
     Lfm2ToolParser() = delete;
 
+    // ParsingConfig for LFM2 and LFM2.5. Both model families use the same
+    // tool-call grammar and token-boundary strings; the only model-specific
+    // behaviour (stripping <|im_end|> from content) is a no-op on LFM2 since
+    // that model's chat template never emits <|im_end|> in tool-call context.
     static ParsingConfig defaultParsingConfig() {
         ParsingConfig cfg;
         cfg.startTags = {"<|tool_call_start|>"};
         cfg.specialTokenStartTags = {"<|tool_call_start|>"};
         cfg.endTag = "<|tool_call_end|>";
+        cfg.contentTagsToErase = {"<|im_end|>"};
         cfg.toolCallPhaseNeedsSpecialTokens = true;
         return cfg;
     }
@@ -47,18 +62,18 @@ public:
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 
-    std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
+    std::optional<rapidjson::Document> parseChunk(const std::string& chunk,
+        const std::vector<int64_t>& tokens,
+        ov::genai::GenerationFinishReason finishReason) override;
 
 private:
     std::string streamingContent;
     size_t streamingPosition{0};
-    State currentState{State::Content};
+    Lfm2ParseState currentState{Lfm2ParseState::Content};
     ToolCall toolCall;
-    TagIds tagIds{TOOL_CALL_START_TAG, TOOL_CALL_END_TAG, toolCallStartTokenId, toolCallEndTokenId};
-
-    int toolCallIndex{TOOL_CALL_INDEX_START};
+    int toolCallIndex{-1};
 
     bool parseNewContent();
-    bool parseSingleToolCall(const std::string& toolStr, ToolCall& toolCall);
 };
+
 }  // namespace ovms

@@ -58,7 +58,7 @@ private:
     ov::genai::Tokenizer tokenizer;
     std::string toolParserName;
     std::string reasoningParserName;
-    const ToolsSchemas_t& toolNameSchemaMap;  // reference to OpenAIApiHandler::request.toolNameSchemaMap; always sees populated map
+    const ToolsSchemas_t& toolNameSchemaMap;                      // reference to OpenAIApiHandler::request.toolNameSchemaMap; always sees populated map
     std::unique_ptr<BaseOutputParser> toolParser = nullptr;       // Tool parser for extracting tool calls
     std::unique_ptr<BaseOutputParser> reasoningParser = nullptr;  // Reasoning parser for extracting reasoning content
 
@@ -102,5 +102,10 @@ public:
 
     // Decide decode mode dynamically based on user preference and current parser phase.
     bool needSpecialTokensForCurrentDecode(bool userWantsSpecialTokens = false) const;
+
+    // Returns true if `tokenId` is a known phase-start special token (i.e. it would
+    // trigger a phase transition that requires switching to special-token decode mode
+    // before the token is added to the delay buffer).
+    bool isPhaseStartToken(int64_t tokenId) const;
 };
 }  // namespace ovms

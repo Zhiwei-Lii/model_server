@@ -91,6 +91,26 @@ void OVMSTextStreamer::applyDecodeParams(bool useSpecial) {
 //   m_tokenizer, m_additional_detokenization_params.
 // -----------------------------------------------------------------------------
 ov::genai::StreamingStatus OVMSTextStreamer::write(int64_t token) {
+    // Proactive special-token start detection: if the incoming token is a known
+    // phase-start token AND we are currently NOT in special-token decode mode,
+    // flush the delay buffer with the current mode and switch modes BEFORE adding
+    // the token. By switching mode here the token is decoded visibly and the existing
+    // text-based detection in OutputParser::parseChunk works normally.
+    if (m_output_parser && !m_current_special_mode && m_output_parser->isPhaseStartToken(token)) {
+        if (!m_tokens_cache.empty()) {
+            const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
+            if (text.size() > m_printed_len) {
+                const auto status = flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
+                if (status != ov::genai::StreamingStatus::RUNNING)
+                    return status;
+            }
+        }
+        m_tokens_cache.clear();
+        m_decoded_lengths.clear();
+        m_printed_len = 0;
+        applyDecodeParams(true);
+    }
+
     // Check if the parser's required decode mode changed since the last token.
     // If it has, flush any pending text with the old mode, reset the cache, and
     // apply the new decode params before adding the current token.
@@ -163,33 +183,112 @@ ov::genai::StreamingStatus OVMSTextStreamer::write(const std::vector<int64_t>& t
 }
 
 // -----------------------------------------------------------------------------
-//
-// Decodes the remaining token cache (up to DELAY_N_TOKENS - 1 tokens that
-// write() deliberately held back) and flushes with GenerationFinishReason::STOP.
-//
-// Does NOT call TextStreamer::end() — the base would fire its no-op callback
-// and attempt to clear the protected state that we have already managed.
+// drainToken — process one token through the full write() logic but flush its
+// text contribution immediately (no delay-buffer hold-back).
+// Used by end() to drain remaining buffered tokens one-by-one.
 // -----------------------------------------------------------------------------
-void OVMSTextStreamer::end() {
-    // Always send a STOP flush so parsers that rely on finish_reason == STOP for
-    // cleanup (e.g. Hermes3 closing the argument string) receive the signal even
-    // when m_tokens_cache was cleared by a prior newline flush in write().
-    if (!m_tokens_cache.empty()) {
-        const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
-        if (text.size() > m_printed_len) {
-            // 1) Flush remaining text as a regular (non-final) chunk.
-            // 2) Then emit an empty STOP chunk so parsers can finalize and emit
-            //    a separate final delta if needed.
-            flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
-            flush_chunk(text, m_printed_len, ov::genai::GenerationFinishReason::STOP);
-        } else {
-            flush_chunk(text, m_printed_len, ov::genai::GenerationFinishReason::STOP);
+ov::genai::StreamingStatus OVMSTextStreamer::drainToken(int64_t token) {
+    // Proactive phase-start check — identical to write().
+    if (m_output_parser && !m_current_special_mode && m_output_parser->isPhaseStartToken(token)) {
+        if (!m_tokens_cache.empty()) {
+            const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
+            if (text.size() > m_printed_len) {
+                const auto status = flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
+                if (status != ov::genai::StreamingStatus::RUNNING)
+                    return status;
+            }
         }
-    } else {
-        // Cache already cleared (e.g. by a newline flush). No new text, but the
-        // STOP signal must still reach the parser.
-        flush_chunk("", 0, ov::genai::GenerationFinishReason::STOP);
+        m_tokens_cache.clear();
+        m_decoded_lengths.clear();
+        m_printed_len = 0;
+        applyDecodeParams(true);
     }
+
+    // Mode change check — identical to write().
+    if (m_output_parser) {
+        const bool newMode = m_output_parser->needSpecialTokensForCurrentDecode(m_user_wants_special);
+        if (newMode != m_current_special_mode) {
+            if (!m_tokens_cache.empty()) {
+                const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
+                if (text.size() > m_printed_len) {
+                    const auto status = flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
+                    if (status != ov::genai::StreamingStatus::RUNNING)
+                        return status;
+                }
+            }
+            m_tokens_cache.clear();
+            m_decoded_lengths.clear();
+            m_printed_len = 0;
+            applyDecodeParams(newMode);
+        }
+    }
+
+    m_tokens_cache.push_back(token);
+    const std::string text = m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
+    m_decoded_lengths.push_back(static_cast<int64_t>(text.size()));
+
+    // Newline flush — same heuristic as write().
+    if (!text.empty() && text.back() == '\n' && text.size() > m_printed_len) {
+        const auto status = flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
+        m_tokens_cache.clear();
+        m_decoded_lengths.clear();
+        m_printed_len = 0;
+        return status;
+    }
+
+    // Incomplete UTF-8 guard — same as write().
+    if (is_incomplete(text)) {
+        m_decoded_lengths.back() = -1;
+        return ov::genai::StreamingStatus::RUNNING;
+    }
+
+    // Flush this token's contribution immediately (no delay).
+    if (text.size() > m_printed_len) {
+        return flush_chunk(text, text.size(), ov::genai::GenerationFinishReason::NONE);
+    }
+    return ov::genai::StreamingStatus::RUNNING;
+}
+
+void OVMSTextStreamer::end() {
+    // Find the first token in m_tokens_cache that has not yet been printed.
+    // Tokens with decoded position <= m_printed_len were already flushed by write();
+    // they must stay in the cache as BPE decode context for the tokens we drain below.
+    // A decoded length of -1 marks an incomplete UTF-8 sequence (also unprinted).
+    size_t first_unprinted_idx = 0;
+    while (first_unprinted_idx < m_decoded_lengths.size()) {
+        const int64_t dlen = m_decoded_lengths[first_unprinted_idx];
+        if (dlen > 0 && static_cast<size_t>(dlen) <= m_printed_len) {
+            first_unprinted_idx++;
+        } else {
+            break;
+        }
+    }
+
+    // Extract the unprinted tokens; leave the printed ones in place as decode context.
+    const std::vector<int64_t> unprinted(
+        m_tokens_cache.begin() + static_cast<std::ptrdiff_t>(first_unprinted_idx),
+        m_tokens_cache.end());
+    m_tokens_cache.resize(first_unprinted_idx);
+    m_decoded_lengths.resize(first_unprinted_idx);
+    // m_printed_len is intentionally kept as-is: it points to the end of the
+    // already-printed portion of the current cache so drainToken's flush starts
+    // at the right offset.
+
+    for (const int64_t token : unprinted) {
+        const auto status = drainToken(token);
+        if (status != ov::genai::StreamingStatus::RUNNING) {
+            break;  // cancelled mid-drain; still deliver the STOP signal below
+        }
+    }
+
+    // Always deliver the STOP signal so parsers that rely on finishReason==STOP
+    // for cleanup receive it (e.g. hasPendingState flush in Lfm2ToolParser,
+    // argument string finalisation in Hermes3ToolParser).
+    const std::string final_text = m_tokens_cache.empty()
+                                       ? std::string{}
+                                       : m_tokenizer.decode(m_tokens_cache, m_additional_detokenization_params);
+    flush_chunk(final_text, m_printed_len, ov::genai::GenerationFinishReason::STOP);
+
     m_tokens_cache.clear();
     m_decoded_lengths.clear();
     m_printed_len = 0;

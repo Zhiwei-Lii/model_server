@@ -567,12 +567,11 @@ TEST_F(Qwen3OutputParserTest, ImplicitStart_DetectsPromptEndingWithThinkTag) {
     EXPECT_EQ(parsedOutput.content, "visible answer");
 }
 
-// TODO: Behavior gap with implicit reasoning start and trailing whitespace.
-// When reasoning ends with </think>, any content before the tag should be emitted
-// as reasoning before the phase transition. Currently the end tag consumes trailing
-// text without emitting it first. Similar to Llama3 period issue but on phase exit.
-TEST_F(Qwen3OutputParserTest, DISABLED_ImplicitStart_DetectsPromptEndingWithThinkTagAndTrailingWhitespace) {
+TEST_F(Qwen3OutputParserTest, ImplicitStart_DetectsPromptEndingWithThinkTagAndTrailingWhitespace) {
     // Real-world templates often append "<think>\n" - trailing newlines must be tolerated.
+    // Also exercises the end-tag bundling path: if the BPE tokenizer merges a reasoning-text
+    // suffix with the start of "</think>", the streamer's FOUND_INCOMPLETE hold-back may
+    // deliver e.g. "...ing</think>" in one chunk. The parser must emit the pre-tag text.
     outputParser->detectAndSetImplicitReasoningStart("<|im_start|>assistant\n<think>\n");
     std::string input = "reasoning</think>answer";
     auto generatedTensor = qwen3Tokenizer->encode(input, ov::genai::add_special_tokens(false)).input_ids;
@@ -639,14 +638,10 @@ TEST_F(Qwen3OutputParserTest, ImplicitStart_UnarySplitsOnEndTag) {
     EXPECT_EQ(parsedOutput.content, "final answer");
 }
 
-// TODO: Ambiguous behavior: when implicit reasoning start is active (prompt ended with <think>),
-// should explicit <think> in model output be treated as:
-// A) Literal text to emit in reasoning (test expects this)
-// B) A phase marker (current behavior)
-// This is a design decision that needs clarification in the reasoning parser.
-TEST_F(Qwen3OutputParserTest, DISABLED_ImplicitStart_UnaryExplicitThinkInOutputStillHonored) {
-    // If implicit start was detected but the model also emitted an explicit <think> (unusual
-    // but legal), the explicit-tag branch wins and behaves like the no-implicit-start case.
+TEST_F(Qwen3OutputParserTest, ImplicitStart_UnaryExplicitThinkInOutputStillHonored) {
+    // When implicit start is active (prompt ended with <think>) and the model also emits
+    // <think> in its output, the tag is literal reasoning content — we are already in
+    // REASONING phase so there is no phase transition to trigger.
     outputParser->detectAndSetImplicitReasoningStart("<|im_start|>assistant\n<think>\n");
     std::string input = "prefix<think>inner</think>suffix";
     auto generatedTensor = qwen3Tokenizer->encode(input, ov::genai::add_special_tokens(false)).input_ids;

@@ -162,6 +162,23 @@ TEST_F(LFM25OutputParserTest, ParseToolCallOutputWithSingleToolCall) {
     }
 }
 
+TEST_F(LFM25OutputParserTest, ParseToolCallOutputWithSingleToolCall_ProductionMode) {
+    // Production mode: userWantsSpecialTokens=false (skip_special_tokens=true by default).
+    // The <|tool_call_start|> and <|tool_call_end|> tokens are special — without the
+    // proactive isPhaseStartToken() switch in OVMSTextStreamer::write they would decode
+    // to empty strings and tool-call detection would silently fail.
+    std::string input = "<|tool_call_start|>[example_tool(arg1=\"value1\", arg2=42)]<|tool_call_end|>";
+    auto generatedTensor = lfm25Tokenizer->encode(input, ov::genai::add_special_tokens(false)).input_ids;
+    std::vector<int64_t> generatedTokens(generatedTensor.data<int64_t>(), generatedTensor.data<int64_t>() + generatedTensor.get_size());
+    ParsedOutput parsedOutput = ovms::test::parseWithStreamer(*lfm25Tokenizer, *outputParserWithRegularToolParsing, generatedTokens, true, false);
+    EXPECT_EQ(parsedOutput.content, "");
+    EXPECT_EQ(parsedOutput.reasoning, "");
+    ASSERT_EQ(parsedOutput.toolCalls.size(), 1);
+    EXPECT_EQ(parsedOutput.toolCalls[0].name, "example_tool");
+    EXPECT_EQ(parsedOutput.toolCalls[0].arguments, "{\"arg1\":\"value1\",\"arg2\":42}");
+    EXPECT_EQ(parsedOutput.toolCalls[0].id.empty(), false);
+}
+
 TEST_F(LFM25OutputParserTest, ParseToolCallOutputWithNoToolsInTheRequest) {
     std::string inputWithProperClosure = "<|tool_call_start|>[example_tool(arg1=\"value1\", arg2=42)]<|tool_call_end|>";
 

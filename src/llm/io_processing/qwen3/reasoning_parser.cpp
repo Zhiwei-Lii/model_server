@@ -32,22 +32,47 @@ std::optional<rapidjson::Document> Qwen3ReasoningParser::parseChunk(const std::s
         return std::nullopt;
     }
 
-    if (chunk.find(getParsingStartTags()[0]) != std::string::npos || chunk.find(getParsingEndTag()) != std::string::npos) {
-        return std::nullopt;
-    } else {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        writer.StartObject();
-        writer.String("delta");
-        writer.StartObject();
-        writer.String("reasoning_content");
-        writer.String(chunk.c_str());
-        writer.EndObject();
-        writer.EndObject();
-        rapidjson::Document doc;
-        doc.Parse(buffer.GetString());
-        return doc;
+    // Strip the end tag and keep only the text that precedes it.
+    // This handles the case where the end tag token is decoded in the same
+    // streamer flush as preceding reasoning text (FOUND_INCOMPLETE hold-back
+    // accumulates e.g. "...ing</think>" in the cache).
+    std::string text = chunk;
+    const std::string& endTag = getParsingEndTag();
+    const size_t endTagPos = text.rfind(endTag);
+    if (endTagPos != std::string::npos) {
+        text = text.substr(0, endTagPos);
     }
-    return std::nullopt;
+
+    // On the very first call, consume the start tag if it begins the text
+    // (explicit phase-entry case) or mark it consumed immediately if no start
+    // tag is present (implicit reasoning start — the prompt already ended with
+    // <think> so the model never emits it again).
+    // After the first call, any <think> that appears in the stream is literal
+    // reasoning content produced by the model and is emitted as-is.
+    if (!phaseEntryTagConsumed_) {
+        const std::string& startTag = getParsingStartTags()[0];
+        const size_t startTagPos = text.find(startTag);
+        if (startTagPos != std::string::npos) {
+            text = text.substr(startTagPos + startTag.size());
+        }
+        phaseEntryTagConsumed_ = true;
+    }
+
+    if (text.empty()) {
+        return std::nullopt;
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    writer.StartObject();
+    writer.String("delta");
+    writer.StartObject();
+    writer.String("reasoning_content");
+    writer.String(text.c_str());
+    writer.EndObject();
+    writer.EndObject();
+    rapidjson::Document doc;
+    doc.Parse(buffer.GetString());
+    return doc;
 }
 }  // namespace ovms

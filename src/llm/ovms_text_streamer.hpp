@@ -88,6 +88,12 @@ private:
     // Apply decode params matching the current mode to the base class protected member.
     void applyDecodeParams(bool useSpecial);
 
+    // Process one token through the full write() logic but flush its text contribution
+    // immediately rather than waiting for the delay buffer to fill. Used by end() to
+    // drain remaining tokens one-by-one so that phase switches, mode changes, and the
+    // INCOMPLETE hold-back all work correctly across the phase boundary.
+    ov::genai::StreamingStatus drainToken(int64_t token);
+
     ov::genai::StreamingStatus flush_chunk(
         const std::string& text,
         size_t print_until,
