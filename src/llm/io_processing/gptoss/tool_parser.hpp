@@ -51,8 +51,8 @@ class GptOssToolParser : public BaseOutputParser {
 public:
     GptOssToolParser() = delete;
 
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         cfg.startTags = {"<|channel|>commentary to=",
             "<|channel|>analysis to="};
         cfg.endTag = "<|call|>";
@@ -62,7 +62,7 @@ public:
     }
 
     explicit GptOssToolParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 

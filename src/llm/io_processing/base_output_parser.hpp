@@ -28,7 +28,7 @@
 #include "src/port/rapidjson_document.hpp"
 #include "src/port/rapidjson_stringbuffer.hpp"
 #include "src/port/rapidjson_writer.hpp"
-#include "parsing_config.hpp"
+#include "output_parsing_config.hpp"
 
 #include "src/llm/apis/tool_schema_wrapper.hpp"
 
@@ -72,7 +72,7 @@ protected:
     ov::genai::Tokenizer tokenizer;
 
     // Parsing configuration set by sub-class constructors.
-    ParsingConfig parsingConfig;
+    OutputParsingConfig parsingConfig;
 
     // Token IDs resolved from parsingConfig.specialTokenStartTags on construction.
     // Maps token_id -> tag_string so the OutputParser can synthesise the boundary
@@ -102,7 +102,7 @@ public:
     explicit BaseOutputParser(ov::genai::Tokenizer& tokenizer) :
         tokenizer(tokenizer) {}
 
-    explicit BaseOutputParser(ov::genai::Tokenizer& tokenizer, ParsingConfig config) :
+    explicit BaseOutputParser(ov::genai::Tokenizer& tokenizer, OutputParsingConfig config) :
         tokenizer(tokenizer),
         parsingConfig(std::move(config)) {
         resolveSpecialTokenIds();
@@ -113,7 +113,7 @@ public:
     void setImplicitStart(bool value) { implicitStart = value; }
     bool isImplicitStart() const { return implicitStart; }
 
-    const ParsingConfig& getParsingConfig() const { return parsingConfig; }
+    const OutputParsingConfig& getParsingConfig() const { return parsingConfig; }
     const std::unordered_map<int64_t, std::string>& getResolvedStartTokenToTag() const { return resolvedStartTokenToTag; }
 
     // Common function to wrap first delta with full function name in a JSON object that conforms to OpenAI API response format:

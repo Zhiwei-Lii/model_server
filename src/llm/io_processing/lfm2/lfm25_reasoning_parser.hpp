@@ -24,8 +24,8 @@ class Lfm25ReasoningParser : public BaseOutputParser {
 public:
     Lfm25ReasoningParser() = delete;
 
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         cfg.startTags = {"<think>"};
         cfg.specialTokenStartTags = {"<think>"};
         cfg.endTag = "</think>";
@@ -34,7 +34,7 @@ public:
     }
 
     explicit Lfm25ReasoningParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 

@@ -72,15 +72,15 @@ protected:
 public:
     Hermes3ToolParser() = delete;
 
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         cfg.startTags = {"<tool_call>"};
         cfg.endTag = "</tool_call>";
         return cfg;
     }
 
     explicit Hermes3ToolParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 

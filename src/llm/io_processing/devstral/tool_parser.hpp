@@ -54,8 +54,8 @@ class DevstralToolParser : public BaseOutputParser {
 public:
     DevstralToolParser() = delete;
 
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         // [TOOL_CALLS] is always visible as text (alwaysNeedsSpecialTokens=true).
         // Put it in startTags for reliable text-based detection.
         cfg.startTags = {"[TOOL_CALLS]"};
@@ -67,7 +67,7 @@ public:
     }
 
     DevstralToolParser(ov::genai::Tokenizer& tokenizer, const ToolsSchemas_t& toolSchemas,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()),
         toolSchemas(toolSchemas) {}

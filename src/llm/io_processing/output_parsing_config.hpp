@@ -51,7 +51,7 @@ namespace ovms {
 // Parsers that need special tokens nowhere (Llama3, Hermes3, Phi4, Mistral, Qwen3, Qwen3Coder)
 // leave both flags false. Special-token start boundaries are detected via token IDs and
 // synthesised into text, so no special-token decode is required for phase detection.
-struct ParsingConfig {
+struct OutputParsingConfig {
     std::vector<std::string> startTags;
     std::vector<std::string> specialTokenStartTags;
     std::vector<std::string> specialStartTags;

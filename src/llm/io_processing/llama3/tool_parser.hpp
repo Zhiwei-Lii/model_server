@@ -47,8 +47,8 @@ protected:
 public:
     Llama3ToolParser() = delete;
 
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         // <|python_tag|> is a special token. Put it in both startTags (text-based,
         // used when the text is passed directly, e.g. in streaming tests) and
         // specialTokenStartTags (token-ID-based, used in production where the token
@@ -60,7 +60,7 @@ public:
     }
 
     explicit Llama3ToolParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 

@@ -144,7 +144,7 @@ private:
 public:
     Qwen3CoderToolParser() = delete;
     explicit Qwen3CoderToolParser(ov::genai::Tokenizer& tokenizer, const ToolsSchemas_t& toolSchemas,
-        std::optional<ParsingConfig> configOverride = std::nullopt);
+        std::optional<OutputParsingConfig> configOverride = std::nullopt);
 
     std::optional<rapidjson::Document> parseChunk(const std::string& chunk, const std::vector<int64_t>& tokens, ov::genai::GenerationFinishReason finishReason) override;
 

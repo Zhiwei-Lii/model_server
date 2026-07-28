@@ -38,17 +38,17 @@ enum class Lfm2ParseState {
 // The two model families share identical tool-call grammar; the only differences
 // are the token IDs assigned by their respective tokenizers and whether the
 // chat template appends <|im_end|> after tool calls (LFM2.5 only).
-// The correct ParsingConfig variant is chosen automatically via configForTokenizer().
+// The correct OutputParsingConfig variant is chosen automatically via configForTokenizer().
 class Lfm2ToolParser : public BaseOutputParser {
 public:
     Lfm2ToolParser() = delete;
 
-    // ParsingConfig for LFM2 and LFM2.5. Both model families use the same
+    // OutputParsingConfig for LFM2 and LFM2.5. Both model families use the same
     // tool-call grammar and token-boundary strings; the only model-specific
     // behaviour (stripping <|im_end|> from content) is a no-op on LFM2 since
     // that model's chat template never emits <|im_end|> in tool-call context.
-    static ParsingConfig defaultParsingConfig() {
-        ParsingConfig cfg;
+    static OutputParsingConfig defaultParsingConfig() {
+        OutputParsingConfig cfg;
         cfg.startTags = {"<|tool_call_start|>"};
         cfg.specialTokenStartTags = {"<|tool_call_start|>"};
         cfg.endTag = "<|tool_call_end|>";
@@ -58,7 +58,7 @@ public:
     }
 
     explicit Lfm2ToolParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
         BaseOutputParser(tokenizer,
             configOverride.has_value() ? std::move(*configOverride) : defaultParsingConfig()) {}
 

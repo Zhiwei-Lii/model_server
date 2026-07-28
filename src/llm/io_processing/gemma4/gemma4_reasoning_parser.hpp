@@ -36,11 +36,11 @@ protected:
 public:
     Gemma4ReasoningParser() = delete;
     explicit Gemma4ReasoningParser(ov::genai::Tokenizer& tokenizer,
-        std::optional<ParsingConfig> configOverride = std::nullopt) :
-        Qwen3ReasoningParser(tokenizer, [&]() -> std::optional<ParsingConfig> {
+        std::optional<OutputParsingConfig> configOverride = std::nullopt) :
+        Qwen3ReasoningParser(tokenizer, [&]() -> std::optional<OutputParsingConfig> {
             if (configOverride.has_value())
                 return configOverride;
-            ParsingConfig cfg;
+            OutputParsingConfig cfg;
             cfg.startTags = {"<|channel>thought\n"};
             cfg.specialTokenStartTags = {"<|channel>"};
             cfg.endTag = "<channel|>";

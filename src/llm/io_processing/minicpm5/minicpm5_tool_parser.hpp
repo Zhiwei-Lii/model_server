@@ -147,10 +147,10 @@ private:
 public:
     Minicpm5ToolParser() = delete;
 
-    static ParsingConfig defaultParsingConfig(const std::string& functionStartTag,
+    static OutputParsingConfig defaultParsingConfig(const std::string& functionStartTag,
         const std::string& sosToken,
         const std::string& eosToken) {
-        ParsingConfig cfg;
+        OutputParsingConfig cfg;
         cfg.startTags = {functionStartTag};
         cfg.contentTagsToErase = {sosToken, eosToken};
         cfg.alwaysNeedsSpecialTokens = true;
