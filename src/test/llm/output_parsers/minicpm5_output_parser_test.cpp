@@ -323,11 +323,11 @@ TEST_F(Minicpm5OutputParserTest, ParseWithThinkBlockHandledByReasoningParser) {
 }
 
 TEST_F(Minicpm5OutputParserTest, RequiresSpecialTokens) {
-    // Both parsers declare alwaysNeedsSpecialTokens via OutputParsingConfig.
+    // Both parsers declare needsSpecialTokens via OutputParsingConfig.
     Minicpm5ToolParser toolParser(*minicpm5Tokenizer, minicpm5ToolsSchemas);
-    EXPECT_TRUE(toolParser.getParsingConfig().alwaysNeedsSpecialTokens);
+    EXPECT_TRUE(toolParser.getParsingConfig().needsSpecialTokens);
     Minicpm5ReasoningParser reasoningParser(*minicpm5Tokenizer);
-    EXPECT_TRUE(reasoningParser.getParsingConfig().alwaysNeedsSpecialTokens);
+    EXPECT_TRUE(reasoningParser.getParsingConfig().needsSpecialTokens);
     EXPECT_NO_THROW({
         OutputParser parser(*minicpm5Tokenizer, "minicpm5", "minicpm5", minicpm5ToolsSchemas);
         (void)parser;

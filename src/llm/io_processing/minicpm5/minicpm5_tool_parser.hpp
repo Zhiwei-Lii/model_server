@@ -153,7 +153,7 @@ public:
         OutputParsingConfig cfg;
         cfg.startTags = {functionStartTag};
         cfg.contentTagsToErase = {sosToken, eosToken};
-        cfg.alwaysNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

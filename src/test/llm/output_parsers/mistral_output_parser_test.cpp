@@ -170,7 +170,7 @@ TEST_F(MistralOutputParserTest, ParseToolCallOutputWithContentOnBothSidesAndSing
     EXPECT_EQ(parsedOutput.toolCalls[0].id.empty(), false);
 }
 
-TEST_F(MistralOutputParserTest, ParseToolCallOutputWithMultipleToolCallsReturnsContentOnly) {
+TEST_F(MistralOutputParserTest, ParseToolCallOutputWithMultipleToolCallsOutOfExpectedStructure) {
     std::string input = "[TOOL_CALLS][{\"name\": \"tool1\", \"arguments\": {\"a\": 1}}]</s> \n\nThis is some content\n\n[TOOL_CALLS][{\"name\": \"tool2\", \"arguments\": {\"b\": 2}}]</s>";
     std::string testInput = input;
     auto generatedTensor = mistralTokenizer->encode(testInput, ov::genai::add_special_tokens(false)).input_ids;

@@ -39,18 +39,18 @@ namespace ovms {
 //                            OutputParser::parseContentChunk(). This keeps parser-specific
 //                            control tokens out of content without hardcoding parser names.
 //
-// Tokenizer decode mode flags (evaluated by OutputParser::needSpecialTokensForCurrentDecode):
-//   alwaysNeedsSpecialTokens          — Decode with skip_special_tokens=false at all times.
-//                                       For parsers where special tokens appear throughout the
-//                                       output (reasoning channels, GptOss, Gemma4 reasoning).
-//   toolCallPhaseNeedsSpecialTokens   — Decode with skip_special_tokens=false only while in
-//                                       TOOL_CALLS_PROCESSING_TOOL phase. For parsers whose
-//                                       internal parseChunk() searches for special-token strings
-//                                       mid-call (Gemma4 tool, LFM2, devstral).
+// Tokenizer decode mode flag (evaluated by OutputParser::needSpecialTokensForCurrentDecode):
+//   needsSpecialTokens — Decode with skip_special_tokens=false while this parser is in its
+//                        active phase (REASONING for reasoning parsers; TOOL_CALLS_* for tool
+//                        parsers). The parser's internal state machine relies on special-token
+//                        strings being visible in the decoded text during that phase.
 //
-// Parsers that need special tokens nowhere (Llama3, Hermes3, Phi4, Mistral, Qwen3, Qwen3Coder)
-// leave both flags false. Special-token start boundaries are detected via token IDs and
-// synthesised into text, so no special-token decode is required for phase detection.
+//   Parsers that detect phase boundaries via token IDs only (Llama3, Hermes3, Phi4, Mistral,
+//   Qwen3, Qwen3Coder) leave this flag false — the proactive token-ID switch in OVMSTextStreamer
+//   synthesises the start-tag text without requiring special-token decode in the active phase.
+//
+//   Whether the content/unknown phase also needs special tokens is determined at the
+//   OutputParser level (defaultDecodingWithSpecialTokens), not in the per-parser config.
 struct OutputParsingConfig {
     std::vector<std::string> startTags;
     std::vector<std::string> specialTokenStartTags;
@@ -58,8 +58,7 @@ struct OutputParsingConfig {
     std::string endTag;
     std::vector<std::string> contentTagsToErase;
 
-    bool alwaysNeedsSpecialTokens = false;
-    bool toolCallPhaseNeedsSpecialTokens = false;
+    bool needsSpecialTokens = false;
 };
 
 }  // namespace ovms

@@ -53,7 +53,7 @@ public:
         cfg.specialTokenStartTags = {"<|tool_call_start|>"};
         cfg.endTag = "<|tool_call_end|>";
         cfg.contentTagsToErase = {"<|im_end|>"};
-        cfg.toolCallPhaseNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

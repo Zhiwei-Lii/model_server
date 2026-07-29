@@ -169,7 +169,7 @@ TEST_F(LFM2OutputParserTest, ParseToolCallOutputWithSingleToolCall_ToolOnlyProdu
     // Tool-only parser (no reasoning parser), production mode (userWantsSpecialTokens=false).
     // This is the configuration that actually exercises the isPhaseStartToken() proactive
     // flush in OVMSTextStreamer::write(): with no reasoning parser present, there is no
-    // alwaysNeedsSpecialTokens=true source to keep the mode on, so <|tool_call_start|>
+    // defaultDecodingWithSpecialTokens source to keep the mode on, so <|tool_call_start|>
     // would decode to empty text without the proactive switch, silently losing all tool calls.
     auto toolOnlyParser = std::make_unique<OutputParser>(*lfm2Tokenizer, "lfm2", "", EMPTY_TOOLS_SCHEMA);
     std::string input = "<|tool_call_start|>[example_tool(arg1=\"value1\", arg2=42)]<|tool_call_end|>";

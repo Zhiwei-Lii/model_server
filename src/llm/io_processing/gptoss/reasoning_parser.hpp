@@ -53,7 +53,7 @@ public:
             "<|channel|>commentary<|message|>",
             "<|start|>assistant<|channel|>final<|message|>"};
         cfg.endTag = "<|end|>";
-        cfg.alwaysNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

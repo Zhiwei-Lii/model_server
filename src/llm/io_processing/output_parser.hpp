@@ -67,6 +67,11 @@ private:
     StreamOutputCache streamOutputCache;
     bool implicitReasoningStart_ = false;
 
+    // Baseline decode mode for content/unknown phases — true when the current parser
+    // combination requires special tokens to be visible even outside parser-owned phases
+    // (e.g. GptOss, devstral, minicpm5). Set once in the constructor from parser names.
+    bool defaultDecodingWithSpecialTokens = false;
+
     // Parsing methods below read chunks from streamOutputCache hence no string argument is needed
 
     // Regular content parsing method does not require finishReason as content is always parsed
@@ -100,7 +105,10 @@ public:
     // tokens holds the token IDs that produced chunkResponse (may be empty; currently informational for future use).
     std::optional<rapidjson::Document> parseChunk(const std::string& chunkResponse, const std::vector<int64_t>& tokens, const bool toolsAvailable, ov::genai::GenerationFinishReason finishReason);
 
-    // Decide decode mode dynamically based on user preference and current parser phase.
+    // Decide decode mode dynamically based on parser phase and user preference.
+    // Content/unknown phases use defaultDecodingWithSpecialTokens OR user preference.
+    // Reasoning/tool phases are driven solely by the active parser's needsSpecialTokens flag;
+    // user preference does not override parser correctness requirements in those phases.
     bool needSpecialTokensForCurrentDecode(bool userWantsSpecialTokens = false) const;
 
     // Returns true if `tokenId` is a known phase-start special token (i.e. it would

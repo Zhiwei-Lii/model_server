@@ -55,7 +55,7 @@ public:
         cfg.specialTokenStartTags = {"<|tool_call>"};
         cfg.endTag = "<tool_call|>";
         cfg.contentTagsToErase = {"<turn|>", "<|tool_response>"};
-        cfg.toolCallPhaseNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

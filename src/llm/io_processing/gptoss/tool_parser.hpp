@@ -56,8 +56,7 @@ public:
         cfg.startTags = {"<|channel|>commentary to=",
             "<|channel|>analysis to="};
         cfg.endTag = "<|call|>";
-        cfg.alwaysNeedsSpecialTokens = true;
-        cfg.toolCallPhaseNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

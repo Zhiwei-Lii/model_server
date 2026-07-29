@@ -29,7 +29,7 @@ public:
         cfg.startTags = {"<think>"};
         cfg.specialTokenStartTags = {"<think>"};
         cfg.endTag = "</think>";
-        cfg.alwaysNeedsSpecialTokens = true;
+        cfg.needsSpecialTokens = true;
         return cfg;
     }
 

@@ -222,6 +222,19 @@ OutputParser::OutputParser(ov::genai::Tokenizer& tokenizer, const std::string to
         throw std::runtime_error("Unsupported reasoning parser: \"" + reasoningParserName +
                                  "\". Supported reasoning parsers are: " + getSupportedReasoningParserNamesAsString());
     }
+
+    // Parsers whose special tokens appear outside their own active phase (e.g. GptOss uses
+    // <|channel|>... throughout the stream; devstral's [TOOL_CALLS] tag and minicpm5's <s>/<|im_end|>
+    // must be visible in the content phase). For all other parser combinations the content phase
+    // decodes with skip_special_tokens=true (the default, lower noise).
+    defaultDecodingWithSpecialTokens =
+        toolParserName == "gptoss" ||
+        toolParserName == "devstral" ||
+        toolParserName == "minicpm5" ||
+        reasoningParserName == "gptoss" ||
+        reasoningParserName == "gemma4" ||
+        reasoningParserName == "lfm2" ||
+        reasoningParserName == "minicpm5";
 }
 
 bool OutputParser::isToolParserAvailable() const {
@@ -287,32 +300,38 @@ void OutputParser::resetStreamingState() {
 }
 
 bool OutputParser::needSpecialTokensForCurrentDecode(bool userWantsSpecialTokens) const {
-    if (userWantsSpecialTokens) {
-        return true;
+    // Content / unknown phase: use the computed baseline for this parser combination;
+    // also honour user preference here (scoped to content — does not override parser phases).
+    if (processingPhase == CONTENT || processingPhase == UNKNOWN) {
+        return defaultDecodingWithSpecialTokens || userWantsSpecialTokens;
     }
-    if (toolParser && toolParser->getParsingConfig().alwaysNeedsSpecialTokens) {
-        return true;
+    // Reasoning phase: the active reasoning parser owns the decision.
+    if (processingPhase == REASONING) {
+        return reasoningParser && reasoningParser->getParsingConfig().needsSpecialTokens;
     }
-    if (reasoningParser && reasoningParser->getParsingConfig().alwaysNeedsSpecialTokens) {
-        return true;
-    }
-    if ((processingPhase == TOOL_CALLS_PROCESSING_TOOL || processingPhase == TOOL_CALLS_WAITING_FOR_TOOL) &&
-        toolParser && toolParser->getParsingConfig().toolCallPhaseNeedsSpecialTokens) {
-        return true;
+    // Tool-call phases: the active tool parser owns the decision.
+    if (processingPhase == TOOL_CALLS_PROCESSING_TOOL || processingPhase == TOOL_CALLS_WAITING_FOR_TOOL) {
+        return toolParser && toolParser->getParsingConfig().needsSpecialTokens;
     }
     return false;
 }
 
 bool OutputParser::isPhaseStartToken(int64_t tokenId) const {
+    // The proactive switch's job is to make a phase-entry token visible *before*
+    // entering the phase. Once we are already inside the relevant phase the token
+    // is either invisible (skip_special_tokens=true is active) or the parser's own
+    // text-based detection handles re-entry.
     if (toolParser) {
         const auto& tokenMap = toolParser->getResolvedStartTokenToTag();
-        if (tokenMap.count(tokenId)) {
+        if (tokenMap.count(tokenId) &&
+            processingPhase != TOOL_CALLS_PROCESSING_TOOL &&
+            processingPhase != TOOL_CALLS_WAITING_FOR_TOOL) {
             return true;
         }
     }
     if (reasoningParser) {
         const auto& tokenMap = reasoningParser->getResolvedStartTokenToTag();
-        if (tokenMap.count(tokenId)) {
+        if (tokenMap.count(tokenId) && processingPhase != REASONING) {
             return true;
         }
     }

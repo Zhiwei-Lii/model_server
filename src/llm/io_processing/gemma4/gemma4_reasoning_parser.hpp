@@ -44,7 +44,7 @@ public:
             cfg.startTags = {"<|channel>thought\n"};
             cfg.specialTokenStartTags = {"<|channel>"};
             cfg.endTag = "<channel|>";
-            cfg.alwaysNeedsSpecialTokens = true;
+            cfg.needsSpecialTokens = true;
             return cfg;
         }()) {
         resolveSpecialTokenIds();
