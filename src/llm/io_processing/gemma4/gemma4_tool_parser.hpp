@@ -52,7 +52,7 @@ public:
     static OutputParsingConfig defaultParsingConfig() {
         OutputParsingConfig cfg;
         cfg.startTags = {"<|tool_call>"};
-        cfg.specialTokenStartTags = {"<|tool_call>"};
+        cfg.tokenIdStartTags = {"<|tool_call>"};
         cfg.endTag = "<tool_call|>";
         cfg.contentTagsToErase = {"<turn|>", "<|tool_response>"};
         cfg.needsSpecialTokens = true;

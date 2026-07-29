@@ -51,11 +51,11 @@ public:
         OutputParsingConfig cfg;
         // <|python_tag|> is a special token. Put it in both startTags (text-based,
         // used when the text is passed directly, e.g. in streaming tests) and
-        // specialTokenStartTags (token-ID-based, used in production where the token
+        // tokenIdStartTags (token-ID-based, used in production where the token
         // decodes to empty with skip_special_tokens=true).
         cfg.startTags = {"<|python_tag|>"};
-        cfg.specialTokenStartTags = {"<|python_tag|>"};
-        cfg.specialStartTags = {"{"};
+        cfg.tokenIdStartTags = {"<|python_tag|>"};
+        cfg.preambleStartTags = {"{"};
         return cfg;
     }
 

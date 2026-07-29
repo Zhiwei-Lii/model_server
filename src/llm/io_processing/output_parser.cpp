@@ -388,7 +388,7 @@ std::optional<rapidjson::Document> OutputParser::parseChunk(const std::string& c
             TagLookupStatus reasoningStartTagStatus = streamOutputCache.lookupTags(reasoningParser->getParsingStartTags());
             if (reasoningStartTagStatus == TagLookupStatus::NOT_FOUND) {
                 // If reasoning start tag is not found, check if any of the special start tags are found
-                reasoningStartTagStatus = streamOutputCache.lookupTags(reasoningParser->getSpecialParsingStartTags());
+                reasoningStartTagStatus = streamOutputCache.lookupTags(reasoningParser->getPreambleStartTags());
             }
             if (reasoningStartTagStatus == TagLookupStatus::FOUND_COMPLETE) {
                 return parseReasoningChunk(tokens, finishReason);
@@ -401,7 +401,7 @@ std::optional<rapidjson::Document> OutputParser::parseChunk(const std::string& c
             TagLookupStatus toolCallStartTagStatus = streamOutputCache.lookupTags(toolParser->getParsingStartTags());
             if (toolCallStartTagStatus == TagLookupStatus::NOT_FOUND) {
                 // If tool call start tag is not found, check if any of the special start tags are found
-                toolCallStartTagStatus = streamOutputCache.lookupTags(toolParser->getSpecialParsingStartTags());
+                toolCallStartTagStatus = streamOutputCache.lookupTags(toolParser->getPreambleStartTags());
             }
             if (toolCallStartTagStatus == TagLookupStatus::FOUND_COMPLETE) {
                 return parseToolCallChunk(tokens, finishReason);

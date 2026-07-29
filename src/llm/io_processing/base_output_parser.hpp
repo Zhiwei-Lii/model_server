@@ -74,7 +74,7 @@ protected:
     // Parsing configuration set by sub-class constructors.
     OutputParsingConfig parsingConfig;
 
-    // Token IDs resolved from parsingConfig.specialTokenStartTags on construction.
+    // Token IDs resolved from parsingConfig.tokenIdStartTags on construction.
     // Maps token_id -> tag_string so the OutputParser can synthesise the boundary
     // text when a token-ID-based phase transition fires.
     std::unordered_map<int64_t, std::string> resolvedStartTokenToTag;
@@ -84,10 +84,10 @@ protected:
     // inside the parsed segment (e.g. reasoning) without producing the start tag itself.
     bool implicitStart = false;
 
-    // Resolve specialTokenStartTags → resolvedStartTokenToTag using the tokenizer.
-    // Called once from constructors that set parsingConfig.specialTokenStartTags.
+    // Resolve tokenIdStartTags → resolvedStartTokenToTag using the tokenizer.
+    // Called once from constructors that set parsingConfig.tokenIdStartTags.
     void resolveSpecialTokenIds() {
-        for (const auto& tag : parsingConfig.specialTokenStartTags) {
+        for (const auto& tag : parsingConfig.tokenIdStartTags) {
             if (tag.empty())
                 continue;
             const auto tensor = tokenizer.encode(tag, ov::genai::add_special_tokens(false)).input_ids;
@@ -137,8 +137,8 @@ public:
     }
 
     // Get additional tags checked only in the UNKNOWN phase.
-    virtual const std::vector<std::string>& getSpecialParsingStartTags() const {
-        return parsingConfig.specialStartTags;
+    virtual const std::vector<std::string>& getPreambleStartTags() const {
+        return parsingConfig.preambleStartTags;
     }
 
     // Get the tag that marks the end of the segment.

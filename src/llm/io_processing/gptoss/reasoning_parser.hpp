@@ -49,7 +49,7 @@ public:
     static OutputParsingConfig defaultParsingConfig() {
         OutputParsingConfig cfg;
         cfg.startTags = {"<|channel|>analysis<|message|>"};
-        cfg.specialStartTags = {"<|channel|>final<|message|>",
+        cfg.preambleStartTags = {"<|channel|>final<|message|>",
             "<|channel|>commentary<|message|>",
             "<|start|>assistant<|channel|>final<|message|>"};
         cfg.endTag = "<|end|>";

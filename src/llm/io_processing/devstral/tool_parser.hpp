@@ -59,7 +59,7 @@ public:
         // [TOOL_CALLS] is always visible as text (needsSpecialTokens=true).
         // Put it in startTags for reliable text-based detection.
         cfg.startTags = {"[TOOL_CALLS]"};
-        cfg.specialTokenStartTags = {"[TOOL_CALLS]"};
+        cfg.tokenIdStartTags = {"[TOOL_CALLS]"};
         cfg.endTag = "</s>";
         cfg.needsSpecialTokens = true;
         return cfg;

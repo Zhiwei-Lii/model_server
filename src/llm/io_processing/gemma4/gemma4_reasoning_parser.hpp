@@ -42,7 +42,7 @@ public:
                 return configOverride;
             OutputParsingConfig cfg;
             cfg.startTags = {"<|channel>thought\n"};
-            cfg.specialTokenStartTags = {"<|channel>"};
+            cfg.tokenIdStartTags = {"<|channel>"};
             cfg.endTag = "<channel|>";
             cfg.needsSpecialTokens = true;
             return cfg;

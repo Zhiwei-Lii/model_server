@@ -70,7 +70,7 @@ public:
 
     static OutputParsingConfig defaultParsingConfig() {
         OutputParsingConfig cfg;
-        cfg.specialTokenStartTags = {"[TOOL_CALLS]"};
+        cfg.tokenIdStartTags = {"[TOOL_CALLS]"};
         cfg.startTags = {"[TOOL_CALLS]", "[{\""};  // [TOOL_CALLS] for direct text, [{" as fallback
         return cfg;
     }

@@ -29,7 +29,7 @@ namespace ovms {
 namespace {
 
 // LFM2.5 assigns token ID 124905 to <|tool_call_start|>; LFM2 uses 10.
-// (Token-ID resolution happens automatically via specialTokenStartTags.)
+// (Token-ID resolution happens automatically via tokenIdStartTags.)
 
 // Tool-call format delimiters shared by LFM2 and LFM2.5.
 const std::string TOOL_LIST_START_INDICATOR = "[";

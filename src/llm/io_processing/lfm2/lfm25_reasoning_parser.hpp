@@ -27,7 +27,7 @@ public:
     static OutputParsingConfig defaultParsingConfig() {
         OutputParsingConfig cfg;
         cfg.startTags = {"<think>"};
-        cfg.specialTokenStartTags = {"<think>"};
+        cfg.tokenIdStartTags = {"<think>"};
         cfg.endTag = "</think>";
         cfg.needsSpecialTokens = true;
         return cfg;
